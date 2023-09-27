@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas
+      id="canvas"
+      style="box-shadow: 0px 0px 5px #ccc; border-radius: 8px"
+    ></canvas>
+    <script>
+      class Scene {
+        // 鼠标点击位置
+        mouseClickPos = {
+          x: 0,
+          y: 0,
+        };
+        // 原点上一次偏移量
+        prevOffset = {
+          x: 0,
+          y: 0,
+        };
+        // 原点偏移量
+        offset = {
+          x: 0,
+          y: 0,
+        };
+        mouseWheelPosition = { x: 0, y: 0 }; // 记录鼠标滚轮时的坐标位置
+        maxScale = 8;
+        minScale = 0.4;
+        scaleStep = 0.2;
+        scale = 1;
+        preScale = 1;
+        constructor(
+          id,
+          options = {
+            width: 600,
+            height: 400,
+          }
+        ) {
+          this.canvas = document.querySelector("#" + id);
+          this.canvas.width = options.width;
+          this.canvas.height = options.height;
+          this.width = options.width;
+          this.height = options.height;
+          this.ctx = this.canvas.getContext("2d");
+          this.onMouseDown = this.onMousedown.bind(this);
+          this.onMouseMove = this.onMousemove.bind(this);
+          this.onMouseUp = this.onMouseup.bind(this);
+          this.onWheel = this.onMousewheel.bind(this);
+
+          this.canvas.addEventListener("mousedown", this.onMouseDown);
+          this.canvas.addEventListener("contextmenu", this.onContextmenu);
+          this.canvas.addEventListener("wheel", this.onWheel);
+        }
+
+        onMousedown(e) {
+          if (e.button === 2) {
+            // 右键拖动
+            this.mouseClickPos = {
+              x: e.x,
+              y: e.y,
+            };
+            window.addEventListener("mousemove", this.onMouseMove);
+            window.addEventListener("mouseup", this.onMouseUp);
+          }
+        }
+        onMousemove(e) {
+          this.offset = {
+            x: this.prevOffset.x + e.x - this.mouseClickPos.x,
+            y: this.prevOffset.y + e.y - this.mouseClickPos.y,
+          };
+          this.point();
+        }
+        onMouseup() {
+          this.prevOffset = this.offset;
+          window.removeEventListener("mousemove", this.onMouseMove);
+          window.removeEventListener("mouseup", this.onMouseUp);
+        }
+        onContextmenu(e) {
+          e.preventDefault();
+        }
+
+        onMousewheel(e) {
+          this.mouseWheelPosition = {
+            x: e.offsetX,
+            y: e.offsetY,
+          };
+          if (e.wheelDelta > 0) {
+            // 放大
+            this.scale = this.scale + this.scaleStep;
+            if (this.scale > this.maxScale) {
+              this.scale = this.maxScale;
+              return;
+            }
+          } else {
+            // 缩小
+            this.scale = this.scale - this.scaleStep;
+            if (this.scale < this.minScale) {
+              this.scale = this.minScale;
+              return;
+            }
+          }
+          this.zoom();
+        }
+
+        zoom() {
+          this.offset = {
+            x:
+              this.mouseWheelPosition.x -
+              ((this.mouseWheelPosition.x - this.offset.x) * this.scale) /
+                this.preScale,
+            y:
+              this.mouseWheelPosition.y -
+              ((this.mouseWheelPosition.y - this.offset.y) * this.scale) /
+                this.preScale,
+          };
+          this.preScale = this.scale;
+          this.prevOffset = this.offset;
+          this.point();
+        }
+
+        draw() {
+          this.ctx.fillStyle = "red";
+          this.ctx.fillRect(50, 50, 50, 50);
+
+          this.ctx.fillStyle = "green";
+          this.ctx.fillRect(150, 150, 50, 50);
+        }
+
+        clear() {
+          this.canvas.width = this.width;
+        }
+        point() {
+          this.clear();
+          this.ctx.translate(this.offset.x, this.offset.y);
+          this.ctx.scale(this.scale, this.scale);
+          this.draw();
+        }
+      }
+      const scene = new Scene("canvas");
+      scene.point();
+    </script>
+  </body>
+</html>
